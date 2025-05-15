@@ -3,6 +3,7 @@ import { ToolArgs, ToolBase, ToolCategory, TelemetryToolMetadata } from "../tool
 import { NodeDriverServiceProvider } from "@mongosh/service-provider-node-driver";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { ErrorCodes, MongoDBError } from "../../errors.js";
+import { getActiveConnectionString } from "../../config.js";
 import logger, { LogId } from "../../logger.js";
 
 export const DbOperationArgs = {
@@ -14,9 +15,10 @@ export abstract class MongoDBToolBase extends ToolBase {
     protected category: ToolCategory = "mongodb";
 
     protected async ensureConnected(): Promise<NodeDriverServiceProvider> {
-        if (!this.session.serviceProvider && this.config.connectionString) {
+        const connectionString = getActiveConnectionString(this.config);
+        if (!this.session.serviceProvider && connectionString) {
             try {
-                await this.connectToMongoDB(this.config.connectionString);
+                await this.connectToMongoDB(connectionString);
             } catch (error) {
                 logger.error(
                     LogId.mongodbConnectFailure,

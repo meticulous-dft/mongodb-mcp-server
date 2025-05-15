@@ -30,6 +30,7 @@ export class Session extends EventEmitter<{
         clusterName: string;
         expiryDate: Date;
     };
+    sampleDatasetId?: string;
 
     constructor({ apiBaseUrl, apiClientId, apiClientSecret }: SessionOptions) {
         super();

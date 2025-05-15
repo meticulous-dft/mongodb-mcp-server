@@ -6,7 +6,7 @@ import { MongoDbTools } from "./tools/mongodb/tools.js";
 import logger, { initializeLogger, LogId } from "./logger.js";
 import { ObjectId } from "mongodb";
 import { Telemetry } from "./telemetry/telemetry.js";
-import { UserConfig } from "./config.js";
+import { UserConfig, getActiveConnectionString } from "./config.js";
 import { type ServerEvent } from "./telemetry/types.js";
 import { type ServerCommand } from "./telemetry/types.js";
 import { CallToolRequestSchema, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -151,7 +151,7 @@ export class Server {
                 const result = {
                     telemetry: this.userConfig.telemetry,
                     logPath: this.userConfig.logPath,
-                    connectionString: this.userConfig.connectionString
+                    connectionString: getActiveConnectionString(this.userConfig)
                         ? "set; access to MongoDB tools are currently available to use"
                         : "not set; before using any MongoDB tool, you need to configure a connection string, alternatively you can setup MongoDB Atlas access, more info at 'https://github.com/mongodb-js/mongodb-mcp-server'.",
                     connectOptions: this.userConfig.connectOptions,
@@ -174,9 +174,10 @@ export class Server {
     }
 
     private async validateConfig(): Promise<void> {
-        if (this.userConfig.connectionString) {
+        const activeConnectionString = getActiveConnectionString(this.userConfig);
+        if (activeConnectionString) {
             try {
-                await this.session.connectToMongoDB(this.userConfig.connectionString, this.userConfig.connectOptions);
+                await this.session.connectToMongoDB(activeConnectionString, this.userConfig.connectOptions);
             } catch (error) {
                 console.error(
                     "Failed to connect to MongoDB instance using the connection string from the config: ",
@@ -201,6 +202,9 @@ export class Server {
                     "Failed to validate MongoDB Atlas the credentials from the config, but validated the connection string."
                 );
             }
+            console.error(
+                "Failed to validate MongoDB Atlas the credentials from the config, but validated the connection string."
+            );
         }
     }
 }

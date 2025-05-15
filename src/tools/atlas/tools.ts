@@ -9,6 +9,9 @@ import { CreateDBUserTool } from "./create/createDBUser.js";
 import { CreateProjectTool } from "./create/createProject.js";
 import { ListOrganizationsTool } from "./read/listOrgs.js";
 import { ConnectClusterTool } from "./metadata/connectCluster.js";
+import { LoadSampleDatasetTool } from "./create/loadSampleDataset.js";
+import { GetSampleDatasetLoadStatusTool } from "./read/getSampleDatasetLoadStatus.js";
+import { DeleteClusterTool } from "./delete/deleteCluster.js";
 
 export const AtlasTools = [
     ListClustersTool,
@@ -22,4 +25,7 @@ export const AtlasTools = [
     CreateProjectTool,
     ListOrganizationsTool,
     ConnectClusterTool,
+    LoadSampleDatasetTool,
+    GetSampleDatasetLoadStatusTool,
+    DeleteClusterTool,
 ];

@@ -18,6 +18,12 @@ import { DropCollectionTool } from "./delete/dropCollection.js";
 import { ExplainTool } from "./metadata/explain.js";
 import { CreateCollectionTool } from "./create/createCollection.js";
 import { LogsTool } from "./metadata/logs.js";
+import { CreateSearchIndexTool } from "./create/createSearchIndex.js";
+import { CollectionSearchIndexesTool } from "./read/collectionSearchIndexes.js";
+import { DropSearchIndexTool } from "./delete/dropSearchIndex.js";
+import { ListConnectionsTool } from "./metadata/listConnections.js";
+import { CreateEmbeddingsTool } from "./embeddings/createEmbeddings.js";
+import { VectorQueryTool } from "./embeddings/vectorQuery.js";
 
 export const MongoDbTools = [
     ConnectTool,
@@ -40,4 +46,10 @@ export const MongoDbTools = [
     ExplainTool,
     CreateCollectionTool,
     LogsTool,
+    CreateSearchIndexTool,
+    CollectionSearchIndexesTool,
+    DropSearchIndexTool,
+    ListConnectionsTool,
+    CreateEmbeddingsTool,
+    VectorQueryTool,
 ];

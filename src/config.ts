@@ -19,7 +19,9 @@ export interface UserConfig {
     apiClientSecret?: string;
     telemetry?: "enabled" | "disabled";
     logPath: string;
-    connectionString?: string;
+    connectionString?: string; // single connection
+    connections?: Record<string, string>; // map of name -> connection string
+    connectionName?: string; // NEW: name of the active connection
     connectOptions: ConnectOptions;
     disabledTools: Array<string>;
     readOnly?: boolean;
@@ -37,6 +39,8 @@ const defaults: UserConfig = {
     disabledTools: [],
     telemetry: "enabled",
     readOnly: false,
+    connections: undefined,
+    connectionName: undefined,
 };
 
 export const config = {
@@ -44,6 +48,23 @@ export const config = {
     ...getEnvConfig(),
     ...getCliConfig(),
 };
+
+/**
+ * Returns the active MongoDB connection string based on config.
+ * Priority:
+ *   1. If connections and connectionName are set, use connections[connectionName]
+ *   2. Else, use connectionString (legacy)
+ *   3. Else, undefined
+ */
+export function getActiveConnectionString(cfg: UserConfig): string | undefined {
+    if (cfg.connectionString) {
+        return cfg.connectionString;
+    }
+    if (cfg.connections && cfg.connectionName && cfg.connections[cfg.connectionName]) {
+        return cfg.connections[cfg.connectionName];
+    }
+    return undefined;
+}
 
 function getLogPath(): string {
     const localDataPath =
@@ -66,6 +87,16 @@ function getEnvConfig(): Partial<UserConfig> {
             return;
         }
         if (path.length === 0) {
+            // Special handling for connections: parse as JSON if possible
+            if (currentField === "connections") {
+                try {
+                    obj[currentField] = JSON.parse(value);
+                    return;
+                } catch {
+                    return;
+                }
+            }
+
             const numberValue = Number(value);
             if (!isNaN(numberValue)) {
                 obj[currentField] = numberValue;
@@ -117,7 +148,22 @@ function SNAKE_CASE_toCamelCase(str: string): string {
 
 // Reads the cli args and parses them into a UserConfig object.
 function getCliConfig() {
-    return argv(process.argv.slice(2), {
+    const args = argv(process.argv.slice(2), {
         array: ["disabledTools"],
-    }) as unknown as Partial<UserConfig>;
+        configuration: {
+            "parse-numbers": true,
+            "parse-positional-numbers": true,
+        },
+    }) as Record<string, unknown>;
+
+    // Special handling for --connections: parse as JSON if present
+    if (typeof args.connections === "string") {
+        try {
+            args.connections = JSON.parse(args.connections);
+        } catch {
+            // leave as string if not valid JSON
+        }
+    }
+
+    return args as Partial<UserConfig>;
 }

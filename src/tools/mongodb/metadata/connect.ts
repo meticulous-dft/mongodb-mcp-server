@@ -4,15 +4,22 @@ import { MongoDBToolBase } from "../mongodbTool.js";
 import { ToolArgs, OperationType } from "../../tool.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import assert from "assert";
-import { UserConfig } from "../../../config.js";
+import { UserConfig, getActiveConnectionString } from "../../../config.js";
 import { Telemetry } from "../../../telemetry/telemetry.js";
 import { Session } from "../../../session.js";
 
 const disconnectedSchema = z
     .object({
-        connectionString: z.string().describe("MongoDB connection string (in the mongodb:// or mongodb+srv:// format)"),
+        connectionString: z
+            .string()
+            .describe("MongoDB connection string (in the mongodb:// or mongodb+srv:// format)")
+            .optional(),
+        connectionName: z
+            .string()
+            .describe("Name of the MongoDB connection to use from the config's connections map")
+            .optional(),
     })
-    .describe("Options for connecting to MongoDB.");
+    .describe("Options for connecting to MongoDB. Provide either a connection string or a connection name.");
 
 const connectedSchema = z
     .object({
@@ -20,9 +27,13 @@ const connectedSchema = z
             .string()
             .optional()
             .describe("MongoDB connection string to switch to (in the mongodb:// or mongodb+srv:// format)"),
+        connectionName: z
+            .string()
+            .optional()
+            .describe("Name of the MongoDB connection to switch to from the config's connections map"),
     })
     .describe(
-        "Options for switching the current MongoDB connection. If a connection string is not provided, the connection string from the config will be used."
+        "Options for switching the current MongoDB connection. Provide either a connection string or a connection name. If neither is provided, the connection string from the config will be used."
     );
 
 const connectedName = "switch-connection" as const;
@@ -40,6 +51,7 @@ export class ConnectTool extends MongoDBToolBase {
     // schema in the register method.
     protected argsShape = {
         connectionString: z.string().optional(),
+        connectionName: z.string().optional(),
     };
 
     protected operationType: OperationType = "metadata";
@@ -51,21 +63,27 @@ export class ConnectTool extends MongoDBToolBase {
         });
     }
 
-    protected async execute({ connectionString }: ToolArgs<typeof this.argsShape>): Promise<CallToolResult> {
-        switch (this.name) {
-            case disconnectedName:
-                assert(connectionString, "Connection string is required");
-                break;
-            case connectedName:
-                connectionString ??= this.config.connectionString;
-                assert(
-                    connectionString,
-                    "Cannot switch to a new connection because no connection string was provided and no default connection string is configured."
-                );
-                break;
+    protected async execute({
+        connectionString,
+        connectionName,
+    }: ToolArgs<typeof this.argsShape>): Promise<CallToolResult> {
+        let finalConnectionString = connectionString;
+
+        if (!finalConnectionString && connectionName) {
+            finalConnectionString = this.config.connections?.[connectionName];
+            assert(finalConnectionString, `No connection string found for connection name "${connectionName}".`);
         }
 
-        await this.connectToMongoDB(connectionString);
+        if (!finalConnectionString) {
+            finalConnectionString = getActiveConnectionString(this.config);
+        }
+
+        assert(
+            finalConnectionString,
+            "Cannot switch to a new connection because no connection string or connection name was provided and no default connection string is configured."
+        );
+
+        await this.connectToMongoDB(finalConnectionString);
         this.updateMetadata();
         return {
             content: [{ type: "text", text: "Successfully connected to MongoDB." }],
@@ -79,7 +97,7 @@ export class ConnectTool extends MongoDBToolBase {
     }
 
     private updateMetadata(): void {
-        if (this.config.connectionString || this.session.serviceProvider) {
+        if (getActiveConnectionString(this.config) || this.session.serviceProvider) {
             this.update?.({
                 name: connectedName,
                 description: connectedDescription,

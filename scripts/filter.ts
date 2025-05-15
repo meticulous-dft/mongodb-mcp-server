@@ -40,6 +40,8 @@ function filterOpenapi(openapi: OpenAPIV3_1.Document): OpenAPIV3_1.Document {
         "createProjectIpAccessList",
         "deleteProjectIpAccessList",
         "listOrganizationProjects",
+        "loadSampleDataset",
+        "getSampleDatasetLoadStatus",
     ];
 
     const filteredPaths = {};

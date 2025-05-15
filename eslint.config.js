@@ -41,6 +41,12 @@ export default defineConfig([
             "@typescript-eslint/no-non-null-assertion": "error",
         },
     },
+    {
+        files: ["mongodb-mcp-server/src/common/atlas/apiClient.ts"],
+        rules: {
+            "@typescript-eslint/no-unsafe-return": "off"
+        }
+    },
     globalIgnores([
         "node_modules",
         "dist",

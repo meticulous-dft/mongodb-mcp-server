@@ -1,6 +1,6 @@
 import { Session } from "../session.js";
 import { BaseEvent, CommonProperties } from "./types.js";
-import { UserConfig } from "../config.js";
+import { UserConfig, getActiveConnectionString } from "../config.js";
 import logger, { LogId } from "../logger.js";
 import { ApiClient } from "../common/atlas/apiClient.js";
 import { MACHINE_METADATA } from "./constants.js";
@@ -113,7 +113,7 @@ export class Telemetry {
             mcp_client_name: this.session.agentRunner?.name,
             session_id: this.session.sessionId,
             config_atlas_auth: this.session.apiClient.hasCredentials() ? "true" : "false",
-            config_connection_string: this.userConfig.connectionString ? "true" : "false",
+            config_connection_string: getActiveConnectionString(this.userConfig) ? "true" : "false",
         };
     }
 

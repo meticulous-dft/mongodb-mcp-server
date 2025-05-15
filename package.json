@@ -64,6 +64,7 @@
     "@mongodb-js/device-id": "^0.2.1",
     "@mongodb-js/devtools-connect": "^3.7.2",
     "@mongosh/service-provider-node-driver": "^3.6.0",
+    "@xenova/transformers": "^2.17.2",
     "bson": "^6.10.3",
     "lru-cache": "^11.1.0",
     "mongodb": "^6.15.0",

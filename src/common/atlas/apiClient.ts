@@ -278,7 +278,6 @@ export class ApiClient {
             "/api/atlas/v2/groups/{groupId}/clusters/{clusterName}",
             options
         );
-
         if (error) {
             throw ApiClientError.fromError(response, error);
         }
@@ -349,6 +348,28 @@ export class ApiClient {
     async getFlexCluster(options: FetchOptions<operations["getFlexCluster"]>) {
         const { data, error, response } = await this.client.GET(
             "/api/atlas/v2/groups/{groupId}/flexClusters/{name}",
+            options
+        );
+        if (error) {
+            throw ApiClientError.fromError(response, error);
+        }
+        return data;
+    }
+
+    async loadSampleDataset(options: FetchOptions<operations["loadSampleDataset"]>) {
+        const { data, error, response } = await this.client.POST(
+            "/api/atlas/v2/groups/{groupId}/sampleDatasetLoad/{name}",
+            options
+        );
+        if (error) {
+            throw ApiClientError.fromError(response, error);
+        }
+        return data;
+    }
+
+    async getSampleDatasetLoadStatus(options: FetchOptions<operations["getSampleDatasetLoadStatus"]>) {
+        const { data, error, response } = await this.client.GET(
+            "/api/atlas/v2/groups/{groupId}/sampleDatasetLoad/{sampleDatasetId}",
             options
         );
         if (error) {
