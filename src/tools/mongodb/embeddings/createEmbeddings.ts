@@ -15,6 +15,7 @@ interface EmbeddingJob {
     database: string;
     collection: string;
     field: string;
+    embedding_field: string;
     totalDocuments: number;
     processedDocuments: number;
     createdAt: Date;
@@ -32,6 +33,7 @@ export class CreateEmbeddingsTool extends MongoDBToolBase {
     protected argsShape = {
         ...DbOperationArgs,
         field: z.string().describe("Field to generate embeddings from"),
+        embedding_field: z.string().optional().describe("The new field to store the embeddings").default("embedding"),
         limit: z.number().optional().describe("Maximum number of documents to process").default(50),
         jobId: z.string().optional().describe("Job ID for checking status of an existing job"),
         batchSize: z.number().optional().describe("Number of documents to process in each batch").default(10),
@@ -51,6 +53,7 @@ export class CreateEmbeddingsTool extends MongoDBToolBase {
         database,
         collection,
         field,
+        embedding_field,
         limit,
         jobId,
         batchSize = 10,
@@ -69,7 +72,7 @@ export class CreateEmbeddingsTool extends MongoDBToolBase {
         // Filter to exclude null or empty field values, and needs embedding
         const filter: Record<string, Document> = {};
         filter[field] = { $nin: [null, ""] };
-        filter["embedding"] = { $exists: false };
+        filter[embedding_field] = { $exists: false };
 
         // Count total documents to process
         const totalDocuments = await provider.countDocuments(database, collection, filter);
@@ -94,6 +97,7 @@ export class CreateEmbeddingsTool extends MongoDBToolBase {
             database,
             collection,
             field,
+            embedding_field,
             totalDocuments: documentCount,
             processedDocuments: 0,
             createdAt: new Date(),
@@ -212,7 +216,12 @@ export class CreateEmbeddingsTool extends MongoDBToolBase {
                 }
 
                 // Process this batch
-                const updateOperations = await this.processDocumentBatch(job.field, documents, job.timeoutMs);
+                const updateOperations = await this.processDocumentBatch(
+                    job.field,
+                    job.embedding_field,
+                    documents,
+                    job.timeoutMs
+                );
                 const options: BulkWriteOptions = { ordered: false };
                 await provider.bulkWrite(job.database, job.collection, updateOperations, options);
 
@@ -283,6 +292,7 @@ export class CreateEmbeddingsTool extends MongoDBToolBase {
 
     private async processDocumentBatch(
         field: string,
+        embedding_field: string,
         documents: Document[],
         timeoutMs: number
     ): Promise<AnyBulkWriteOperation<Document>[]> {
@@ -308,7 +318,7 @@ export class CreateEmbeddingsTool extends MongoDBToolBase {
             updateDocuments.push({
                 updateOne: {
                     filter: { _id: doc._id as ObjectId },
-                    update: { $set: { embedding: bsonEmbedding } },
+                    update: { $set: { [embedding_field]: bsonEmbedding } },
                 },
             });
         }

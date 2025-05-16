@@ -11,6 +11,7 @@ export class VectorQueryTool extends MongoDBToolBase {
     protected argsShape = {
         ...DbOperationArgs,
         query: z.string().describe("The query term"),
+        embedding_field: z.string().describe("The field storing the embeddings"),
         index: z.string().describe("The name of the vector search index"),
         limit: z.number().optional().describe("Maximum number of documents to return").default(5),
     };
@@ -21,6 +22,7 @@ export class VectorQueryTool extends MongoDBToolBase {
         database,
         collection,
         query,
+        embedding_field,
         index,
         limit,
     }: ToolArgs<typeof this.argsShape>): Promise<CallToolResult> {
@@ -31,7 +33,7 @@ export class VectorQueryTool extends MongoDBToolBase {
                 $vectorSearch: {
                     index,
                     queryVector: queryEmbedding,
-                    path: "embedding",
+                    path: embedding_field,
                     exact: true,
                     limit,
                 },
